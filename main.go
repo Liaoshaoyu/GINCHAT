@@ -8,7 +8,8 @@ import (
 func main() {
 	utils.InitConfig()
 	utils.InitMysql()
-	
+	utils.InitRedis()
+
 	var r = router.Router()
 	err := r.Run(":8081")
 	if err != nil {
