@@ -68,9 +68,12 @@ const (
 
 // 消息发布
 func Publish(ctx context.Context, channel string, msg string) error {
-	fmt.Println("消息订阅", ctx)
+	fmt.Println("消息订阅", msg)
 	var err error
 	err = MyRedis.Publish(ctx, channel, msg).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 

@@ -45,7 +45,7 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 	// 1. 获取并校验参数
 	var query = request.URL.Query()
 	//var token = query.Get("token")
-	var userId, _ = strconv.ParseInt(query.Get("userId"), 10, 64)
+	var userId, _ = strconv.ParseInt(query.Get("id"), 10, 64)
 	//var msgType = query.Get("token")
 	//var targetId = query.Get("targetId")
 	//var content = query.Get("content")
@@ -66,26 +66,31 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 		DataQueue: make(chan []byte, 50),
 		GroupSets: set.New(set.ThreadSafe),
 	}
-	clientMap[0] = node
+
 	// 3. 用户关系
+	rwLocker.Lock()
 	// 4.userid与node绑定，并加锁
+	clientMap[userId] = node
+	rwLocker.Unlock()
 	// 5. 发送逻辑
-	sendMsg(userId, []byte("欢迎进行聊天室！"))
-	sendProc(node)
+	Init()
+	go sendProc(node)
 	// 6. 接收逻辑
-	recvProc(node)
+	go recvProc(node)
+	sendMsg(userId, []byte("欢迎进行聊天室！"))
 }
 func sendProc(node *Node) {
 	for {
 		select {
 		case data := <-node.DataQueue: // congDataQueue读取数据，给data
+			fmt.Println("[ws]sendProc: ", string(data))
 			var err = node.Conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-		default:
-			print("")
+			//default:
+			//	print("sendProc not match")
 		}
 	}
 }
@@ -98,7 +103,7 @@ func recvProc(node *Node) {
 			return
 		}
 		broadMsg(data)
-		fmt.Println("[ws] <<<<< ", data)
+		fmt.Println("recvProc [ws] <<<<< ", string(data))
 	}
 }
 
@@ -108,10 +113,10 @@ func broadMsg(data []byte) {
 	udpsendChan <- data // 写入数据到udpsendChan
 }
 
-func init() {
+func Init() {
 	go udpSendProc()
 	go udpRecvProc()
-
+	fmt.Println("init go routine")
 }
 
 func udpSendProc() {
@@ -126,6 +131,7 @@ func udpSendProc() {
 	for {
 		select {
 		case data := <-udpsendChan:
+			fmt.Println("udpSendProc data: ", string(data))
 			var _, err = con.Write(data)
 			if err != nil {
 				fmt.Println(err)
@@ -136,13 +142,14 @@ func udpSendProc() {
 		}
 	}
 }
+
 func udpRecvProc() {
 	var con, err = net.ListenUDP("udp", &net.UDPAddr{
 		IP:   net.IPv4zero,
 		Port: 3000,
 	})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("dupRecvProc err: ", err)
 		return
 	}
 	defer con.Close()
@@ -150,31 +157,35 @@ func udpRecvProc() {
 		var buf [512]byte
 		var n, err = con.Read(buf[0:])
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("dupRecvProc err: ", err)
 			return
 		}
+		fmt.Println("udpRecvProc data: ", string(buf[0:n]))
 		dispatch(buf[0:n])
 	}
 }
+
 func dispatch(data []byte) {
 	var msg = Message{}
 	var err = json.Unmarshal(data, &msg)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("dispatch err: ", err)
 		return
 	}
 	switch msg.Type {
 	case 1:
+		fmt.Println("dispatch data: ", string(data))
 		sendMsg(int64(msg.TargetId), data)
 	}
 }
 
 func sendMsg(userId int64, msg []byte) {
+	fmt.Println("sendMsg: ", string(msg), " >>> userId: ", userId)
 	rwLocker.RLock()
 	var node, ok = clientMap[userId]
 	rwLocker.RUnlock()
 	//ok = true
-	fmt.Println(userId)
+	//fmt.Println(userId)
 	if ok {
 		node.DataQueue <- msg
 	}

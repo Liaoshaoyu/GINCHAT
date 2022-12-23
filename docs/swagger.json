@@ -20,7 +20,7 @@
             }
         },
         "/user/createrUser": {
-            "get": {
+            "post": {
                 "tags": [
                     "用户模块"
                 ],
@@ -56,7 +56,7 @@
             }
         },
         "/user/deleteUser": {
-            "get": {
+            "post": {
                 "tags": [
                     "用户模块"
                 ],

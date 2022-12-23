@@ -32,7 +32,7 @@ const docTemplate = `{
             }
         },
         "/user/createrUser": {
-            "get": {
+            "post": {
                 "tags": [
                     "用户模块"
                 ],
@@ -68,7 +68,7 @@ const docTemplate = `{
             }
         },
         "/user/deleteUser": {
-            "get": {
+            "post": {
                 "tags": [
                     "用户模块"
                 ],

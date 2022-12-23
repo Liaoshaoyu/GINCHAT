@@ -9,18 +9,41 @@ import (
 )
 
 func Router() *gin.Engine {
-	r := gin.Default()
+	var r = gin.Default()
+
+	// swagger
 	docs.SwaggerInfo.BasePath = ""
-	r.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("index", service.GetIndex)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// 静态资源
+	r.Static("asset", "asset/")
+	r.LoadHTMLGlob("templates/**/*")
+
+	// 首页
+	r.GET("/", service.GetIndex)
+	r.GET("/index", service.GetIndex)
+	r.GET("/toRegister", service.ToRegister)
+	r.GET("/toChat", service.ToChat)
+	r.GET("/chat", service.Chat)
+	r.POST("/searchFriends", service.SearchFriends)
+
+	// 用户
 	r.GET("user/getUserList", service.GetUserList)
-	r.GET("user/createrUser", service.CreaterUser)
-	r.GET("user/deleteUser", service.DeleteUser)
+	r.POST("user/createrUser", service.CreaterUser)
+	r.POST("user/deleteUser", service.DeleteUser)
 	r.POST("user/updateUser", service.UpdateUser)
-	r.POST("user/findUserByNameAndPassword", service.FindUserByNameAndPassword)
+	r.POST("user/findUserByNameAndPwd", service.FindUserByNameAndPwd)
+	r.POST("user/findByID", service.FindByID)
 
 	// 发送消息
 	r.GET("user/sendMsg", service.SendMsg)
 	r.GET("user/sendUserMsg", service.SendUserMsg)
+
+	// 添加
+	r.POST("/contact/addfriend", service.AddFriend)
+	r.POST("/contact/loadcommunity", service.LoadCommunity)
+
+	// 404
+	r.GET("/404", service.NotFound)
 	return r
 }

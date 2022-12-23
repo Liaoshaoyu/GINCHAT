@@ -11,7 +11,7 @@ paths:
       tags:
       - 首页
   /user/createrUser:
-    get:
+    post:
       parameters:
       - description: 用户名
         in: query
@@ -34,7 +34,7 @@ paths:
       tags:
       - 用户模块
   /user/deleteUser:
-    get:
+    post:
       parameters:
       - description: 用户id
         in: query
