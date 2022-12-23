@@ -7,18 +7,18 @@ ENV GO111MODULE=on \
     GOOS=linux \
     GOARCH=amd64
 
-ADD ./GINCHAT /code
+# 移动到工作目录：/build
+WORKDIR /build
 
-WORKDIR /code
+# 将代码复制到容器中
+COPY ./* /build
 
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-
-RUN echo 'Asia/Shanghai' >/etc/timezone
+RUN go env -w GOPROXY=https://goproxy.cn,direct
 
 RUN go mod download
 
-RUN go build -o /code/build/myapp .
-
+# 声明服务端口
 EXPOSE 8081
 
-ENTRYPOINT [ "/code/build/myapp" ]
+# 启动容器时运行的命令
+CMD ["go", "run", "main.go"]
